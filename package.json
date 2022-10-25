@@ -1,0 +1,14 @@
+{
+  "name": "svelte-app",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "DEBUG=1 node backend/main.js",
+    "start": "node backend/main.js"
+  },
+  "devDependencies": {
+    "svelte": "^3.52.0",
+    "bun-types": "^0.2.1"
+  },
+  "dependencies": {}
+}
