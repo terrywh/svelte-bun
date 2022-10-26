@@ -13,16 +13,18 @@ const mux = [
         root: resolve(import.meta.dir, "../public"),
     }),
 ];
-
-Bun.serve({
+/**
+ * @type {import("bun").Serve}
+ */
+export default {
     baseURI: "http://svelte-dev:3000",
     hostname: "127.0.0.1",
     port: 3000,
     async fetch(req) {
         const url = new URL(req.url);
-        for (let serve of mux) {
+        for (let serve of mux) { // 依次执行各中间件
             let r = await serve(url, req)
             if (r instanceof Response) return r;
         }
     },
-});
+}

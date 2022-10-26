@@ -8,7 +8,7 @@
 /**
  * 文件服务配置
  * @typedef {Object} FileServerOptions
- * @property {string} root 根路径
+ * @property {string} root 根路径，查找静态文件
  * @property {string} index 索引文件, 默认 "index.html"
  * @property {StaticErrorHandler} error 错误处理回调
  */
@@ -16,9 +16,9 @@
 /**
  * 编译 Svelte 配置
  * @typedef {Object} SvelteServerOptions
- * @property {string } root 根路径
+ * @property {string} root 根路径，查找和编译 ${root}/*.svelte 文件
  * @property {StaticErrorHandler} error 错误处理回调
- * @property {} compile 编译配置
+ * @property {import("svelte/types/compiler").CompileOptions} compile 编译配置
  */
 
 /**
@@ -30,7 +30,7 @@
 
 import { HTTPError } from "./error";
 import { stat, Stats } from "fs";
-import { join } from "path";
+import { extname, join } from "path";
 import { promisify } from "util";
 import { resolve } from "path";
 import { compile } from "svelte/compiler";
@@ -49,6 +49,19 @@ function parseSince(req) {
     return since ? new Date(since) : null
 }
 
+const MIME_TYPE = {
+    ".html": "text/html",
+    ".js": "text/javascript",
+    ".mjs": "text/javascript",
+    ".css": "text/css",
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".bin": "application/octet-stream",
+}
+
+function contentType(file) {
+    return MIME_TYPE[extname(file)] || MIME_TYPE[".bin"];
+}
 /**
  * 
  * @param {Request} req 
@@ -100,6 +113,7 @@ export function _serveStatic(options) {
         // 返回文件内容
         return new Response(Bun.file(path), {
             headers: {
+                "content-type": contentType(path),
                 "cache-control": "max-age=10, must-revalidate",
                 "last-modified": stat.mtime.toUTCString(),
             },
@@ -112,7 +126,7 @@ const cacheSvelte = new Map;
 /**
  * 
  * @param {string} path 
- * @param {CompileOptions} options 
+ * @param {import("svelte/types/compiler").CompileOptions} options 
  * @returns 
  */
 async function compileSvelte(path, stat, options) {
@@ -144,6 +158,12 @@ export function _serveSvelte(options) {
         root: resolve(import.meta.dir, "../node_modules"),
         index: "index.mjs",
     });
+    /**
+     * 
+     * @param {URL} url 
+     * @param {Request} req 
+     * @returns 
+     */
     const serveSvelte = async function(url, req) {
         const path = resolve(options.root, url.pathname.substring(1));
         let stat;
@@ -170,7 +190,7 @@ export function _serveSvelte(options) {
         }
 
         return new Response(compiled.js.code, {headers: {
-            "content-type": "text/javascript",
+            "content-type": contentType("svelte.js"),
             "cache-control": "max-age=5, must-revalidate",
             "last-modified": stat.mtime.toUTCString(),
         }});

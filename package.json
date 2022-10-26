@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "DEBUG=1 node backend/main.js",
-    "start": "node backend/main.js"
+    "dev": "DEBUG=1 node server/main.js",
+    "start": "node server/main.js"
   },
   "devDependencies": {
     "svelte": "^3.52.0",
