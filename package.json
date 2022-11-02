@@ -8,7 +8,7 @@
   },
   "devDependencies": {
     "svelte": "^3.52.0",
-    "bun-types": "^0.2.1"
+    "bun-types": "^0.2.2"
   },
   "dependencies": {}
 }

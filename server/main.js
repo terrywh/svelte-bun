@@ -18,7 +18,7 @@ const mux = [
  */
 export default {
     baseURI: "http://svelte-dev:3000",
-    hostname: "127.0.0.1",
+    hostname:"0.0.0.0",
     port: 3000,
     async fetch(req) {
         const url = new URL(req.url);
