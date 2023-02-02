@@ -1,6 +1,8 @@
+#!/usr/bin/env bun
 /// <reference path="../node_modules/bun-types/types.d.ts" />
 import { resolve } from "path";
-import { _serveStatic, _serveSvelte } from "./static_server";
+import { _serveStatic, _serveSvelte } from "./static_server"
+import { _serveJson } from "./proxy_server.js"
 
 const mux = [
     _serveSvelte({
@@ -18,7 +20,7 @@ const mux = [
  */
 export default {
     baseURI: "http://svelte-dev:3000",
-    hostname:"0.0.0.0",
+    hostname: "127.0.0.1",
     port: 3000,
     async fetch(req) {
         const url = new URL(req.url);

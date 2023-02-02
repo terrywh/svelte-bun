@@ -130,10 +130,11 @@ const cacheSvelte = new Map;
  * @returns 
  */
 async function compileSvelte(path, stat, options) {
+    if (!stat || !stat.isFile()) throw new HTTPError(404, 404, "file not found", {path});
     const modify = cacheSvelte.get(path + "/modify");
 
     if (!modify || modify < stat.mtime.getTime()) {
-        const cc = compile(await Bun.readFile(path), options);
+        const cc = compile(await Bun.file(path).text(), options);
         cc.mtime = stat.mtime;
 
         cacheSvelte.set(path + "/modify", stat.mtime.getTime());
