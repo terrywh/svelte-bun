@@ -27,11 +27,12 @@ export function _serveJson(options) {
      * @param {Headers|URLSearchParams} source
      */
     const merge = function(target, source) {
-        for (const entry of source.entries()) {
+        const entries = (source.entries ? source.entries() : Object.entries(source))
+        for (const entry of entries) {
             target.delete(entry[0])
         }
-        for (const entry of source.entries()) {
-            target.append(field, value)
+        for (const entry of entries) {
+            target.append(entry[0], entry[1])
         }
     }
     /**
@@ -44,7 +45,7 @@ export function _serveJson(options) {
         if (!target.startsWith("http://") && !target.startsWith("https://")) return // 处理其他中间件
         const domain = target.split("/")[2], option = options[domain]
         
-        if (!!option) // 非法请求
+        if (!option) // 非法请求
             return new Response(JSON.stringify({
                 "error": {"code": 403, "info": "not allowed"}
             }), {status: 403})
@@ -61,9 +62,9 @@ export function _serveJson(options) {
         if (option.payload) Object.assign(payload, option.payload)
         
         // headers["user-agent"] = "bun/" + Bun.version
-        target += '?' + search.toString()
+        target += '?' + url.searchParams.toString()
         const res = await fetch(target, {
-            headers: headers,
+            headers: req.headers,
             method: req.method,
             body: payload ? JSON.stringify(payload) : null,
         })

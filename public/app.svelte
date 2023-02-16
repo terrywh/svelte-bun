@@ -28,4 +28,6 @@
 	.large {font-size: 128px;}
 </style>
 
+<section>
 <h1 class="large">Hello from <b>{browser}</b> via <a href="https://bun.sh/">Bun!</a></h1>
+</section>
