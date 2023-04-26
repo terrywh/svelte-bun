@@ -25,7 +25,7 @@
 </script>
 
 <style>
-	.large {font-size: 128px;}
+	.large {font-size: 32px;}
 </style>
 
 <section>
