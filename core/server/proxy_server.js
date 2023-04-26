@@ -1,9 +1,26 @@
 /**
+ *  JSON 反向代理服务器选项
+ * @typedef {Object} JsonServerOption
+ * @property {Record<string,string> | Headers} [headers]
+ * @property {Record<string,string> | URLSearchParams} [search]
+ * @property {Record<string, any>} [payload]
+ * @property {JsonServerModifier} [modifier]
+ */
+
+/**
+ * @callback JsonServerModifier
+ * @param {Headers} headers
+ * @param {URLSearchParams} search
+ * @param {Record<string, any>} payload
+ * @return {void}
+ */
+
+/**
  * 代理指定的接口（JSON）
- * @param {Record<string, ServeJsonOption>} options
+ * @param {Record<string, JsonServerOption>} options
  * @returns 
  */
-export function _serveJson(options) {
+export function createJsonServer(options) {
     /**
      * 
      * @param {Request} req 
@@ -40,7 +57,7 @@ export function _serveJson(options) {
      * @param {URL} url 
      * @param {Request} req 
      */
-    const jsonServer = async function (url, req) {
+    const server = async function (url, req) {
         let target = url.pathname.substring(1)
         if (!target.startsWith("http://") && !target.startsWith("https://")) return // 处理其他中间件
         const domain = target.split("/")[2], option = options[domain]
@@ -51,7 +68,6 @@ export function _serveJson(options) {
             }), {status: 403})
         
         normalizeHeaders(req)
-        let search = url.searchParams
         let payload = await req.json()
 
         if (option.modifier) modifier(req.headers, url.searchParams, payload)
@@ -71,5 +87,5 @@ export function _serveJson(options) {
         return res
     }
 
-    return jsonServer
+    return server
 }

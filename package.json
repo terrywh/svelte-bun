@@ -2,12 +2,12 @@
   "name": "svelte-app",
   "version": "1.0.0",
   "scripts": {
-    "dev": "DEBUG=1 server/main.js",
-    "start": "server/main.js"
+    "dev": "DEBUG=1 bun sbin/server.js",
+    "start": "bun sbin/server.js"
   },
   "devDependencies": {
-    "svelte": "^3.55.1",
-    "bun-types": "^0.5.0"
+    "svelte": "^3.58.0",
+    "bun-types": "^0.5.8"
   },
-  "dependencies": {}
+  "dependencies": { "es-module-lexer": "^1.2.1" }
 }
