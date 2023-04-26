@@ -1,3 +1,5 @@
+import { HttpError } from "../core/server/error";
+
 export default {
     /**
      * 
@@ -10,5 +12,8 @@ export default {
             r[key] = value;
         }
         return Object.assign(r, body)
+    },
+    "/error": async function (method, query, body) {
+        return new HttpError("failed to do something", 12345, 400, "failed to do something")
     }
 }

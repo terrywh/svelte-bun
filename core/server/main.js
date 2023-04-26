@@ -5,6 +5,8 @@
  * @returns {Promise<Response>|Promise<any>}
  */
 
+import { defaultFileHandler } from "./static_server"
+
 /**
  * @param {ServerMux[]} mux
  * @param {Request} req 

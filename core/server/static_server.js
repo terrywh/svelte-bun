@@ -1,9 +1,10 @@
-import { HTTPError } from "./error";
 import { stat as asyncStat } from "fs/promises";
 import { extname, join } from "path";
 import { resolve } from "path";
 import { compile } from "svelte/compiler";
 import { rewriteImports } from "./import_rewrite";
+import { defaultErrorHandler, HttpError } from "./error";
+import { Stats } from "fs";
 
 /**
  * 
@@ -56,7 +57,7 @@ async function statFile(path) {
 
 /**
  * 
- * @param {import("fs").Stats} stat 
+ * @param {Stats} stat 
  * @param {Request} req 
  * @returns 
  */
@@ -66,51 +67,66 @@ function isfileModified(stat, req) {
         return false
     return true
 }
+
 /**
- * 
- * @param {Request} req 
- * @return {Promise<Response>}
+ * 静态服务器错误处理器
+ * @callback StaticServerHandler
+ * @param {Request} req
+ * @param {string} file
+ * @param {Stats} stat
+ * @param {StaticServerOption} options
+ * @returns {void}
  */
-export async function defaultErrorHandler(req, err) {
-    console.error("request: (", req.method, ")", req.url, "failed, response: (", err.status, ") error: (", err.code, ")", err.info, err.extra);
-    if (err instanceof HTTPError) return new Response(JSON.stringify(err), {status: err.status});
-    else return new Response(JSON.stringify({
-            "error": {"code": 500, "info": "unknown error"},
-        }), {status: 500});
-}
+
 /**
- * 
+ * 默认静态文件处理器，按 Content-Type 返回对应静态文件
  * @param {import("fs").Stats} stat 
  * @param {string} path 
  * @returns 
  */
-export function defaultStaticHandler(stat, path, options) {
-    return new Response(Bun.file(path), {
+export function defaultStaticHandler(req, file, stat, options) {
+    return new Response(Bun.file(file), {
         headers: {
-            "content-type": parseContentType(path),
+            "content-type": parseContentType(file),
             "cache-control": `max-age=${options.ttl}, must-revalidate`,
             "last-modified": stat.mtime.toUTCString(),
         },
     });
 }
 
-export async function defaultScriptHandler(stat, path, options) {
-    const code = await Bun.file(path).text()
-    return new Response(rewriteImports(code, path), {
+/**
+ * 默认脚本代理处理器，支持 .mjs / .js 文件引用路径处理
+ * @param {Request} req 
+ * @param {Stats} stat 
+ * @param {string} path 
+ * @param {StaticServerOption} options 
+ * @returns 
+ */
+export async function defaultScriptHandler(req, file, stat, options) {
+    const code = await Bun.file(file).text()
+    return new Response(rewriteImports(code, file), {
         headers: {
-            "content-type": parseContentType(path),
+            "content-type": parseContentType(file),
             "cache-control": `max-age=${options.ttl}, must-revalidate`,
             "last-modified": stat.mtime.toUTCString(),
         },
     });
 }
-
-export async function defaultSvelteHandler(stat, path, options) {
+/**
+ * 处理 .svelte 文件编译及引用路径
+ * @param {Request} req 
+ * @param {Stats} stat 
+ * @param {string} path 
+ * @param {StaticServerOption} options 
+ * @returns 
+ */
+export async function defaultSvelteHandler(req, file, stat, options) {
     let compiled;
     try {
-        compiled = await compileSvelte(path, stat, options);
+        compiled = await compileSvelte(file, stat, options);
     } catch (ex) {
-        return options.handler.error(req, ex, {path});
+        return options.errorHandler(req, new HttpError(
+            "failed to compile svelte", 10500, 500, `failed to compile svelte '${path}': ${ex}`))
     }
 
     return new Response(compiled.js.code, {headers: {
@@ -119,16 +135,23 @@ export async function defaultSvelteHandler(stat, path, options) {
         "last-modified": stat.mtime.toUTCString(),
     }});
 }
-
-export function defaultFileHandler(stat, path, options) {
+/**
+ * 默认文件处理器，同时支持静态文件及 .svelte / .mjs / .js 文件及引用路径处理
+ * @param {Request} req 
+ * @param {Stats} stat 
+ * @param {string} path 
+ * @param {StaticServerOption} options 
+ * @returns 
+ */
+export function defaultFileHandler(req, path, stat, options) {
     if (path.endsWith(".svelte")) 
-        return defaultSvelteHandler(stat, path, options)
+        return defaultSvelteHandler(req, path, stat, options)
     if (path.endsWith(".mjs") || path.endsWith(".js"))
-        return defaultScriptHandler(stat, path, options)
-    return defaultStaticHandler(stat, path, options)
+        return defaultScriptHandler(req, path, stat, options)
+    return defaultStaticHandler(req, path, stat, options)
 }
 
-export function defaultRedirectHandler(url, options) {
+function handleRedirect(url, options) {
     return new Response(null, {
         status: 302,
         headers: {
@@ -139,10 +162,10 @@ export function defaultRedirectHandler(url, options) {
 
 /**
  * 
- * @param {import("fs").Stats} stat 
+ * @param {Stats} stat 
  * @returns 
  */
-function defaultUnchangedHandler(stat, options) {
+function handleNotModified(stat, options) {
     return new Response(null, {
         status: 304,
         headers: {
@@ -153,15 +176,24 @@ function defaultUnchangedHandler(stat, options) {
 }
 
 /**
+ * @typedef {Object} StaticServerDirMap 静态服务器路径映射配置
+ * @property {string} prefix 请求路径前缀
+ * @property {string} path 映射物理路径
+ * @example
+ * [
+ *      {"prefix": "/@module/", "path": "/data/htdocs/xxx/node_modules"},
+ *      {"prefix": "/", "path": "/data/htdocs/xxx/public"},
+ * ]
+ * 
  * @typedef {Object} StaticServerOption 静态文件服务器选项
- * @property {string | Record<string, string> | StaticServerDir[]} static 静态文件查找路径，访问路径与文件路径映射目录;
+ * @property {string | Record<string, string> | StaticServerDirMap[]} static 静态文件查找路径，访问路径与文件路径映射目录;
  * 1. 多个路径映射其匹配顺序与定义顺序一致
  * 2. XXXX
  * @property {number} [ttl=10] 缓存时间, 默认 10 单位：秒
  * @property {string} [index="index.html"] 索引文件，默认 "index.html" 文件
- * @property {Record<"error" | "static", StaticServerHandler>} [handler] 处理器
- * 1. "error" - 错误处理器
- * 2. "static" - 静态文件处理器
+ * @property {StaticServerHandler} [errorHandler] 错误处理器
+ * @property {StaticServerHandler} [fileHandler] 错误处理器
+ * 
  * @example 仅指定根路径
  * { static: "/data/htdocs/xxx" }
  * @example 指定多个映射
@@ -169,25 +201,6 @@ function defaultUnchangedHandler(stat, options) {
  *      "/@module/": "/data/htdocs/xxx/node_modules",
  *      "/": "/data/htdocs/xxx/public"   
  * } }
- * @example 稳定顺序数组
- * { static: [
- *      {"prefix": "/@module/", "path": "/data/htdocs/xxx/node_modules"},
- *      {"prefix": "/", "path": "/data/htdocs/xxx/public"},
- * ] }
- */
-
-/**
- * @typedef {Object} StaticServerDir 静态服务器路径映射配置
- * @property {string} prefix 请求路径前缀
- * @property {string} path 映射物理路径
- */
-
-/**
- * 静态服务器错误处理器
- * @callback StaticServerHandler
- * @param {import("fs").Stats} stat
- * @param {string} file
- * @returns {void}
  */
 
 /**
@@ -198,10 +211,12 @@ function defaultUnchangedHandler(stat, options) {
 export function createStaticServer(options) {
     options = Object.assign({}, { index: "index.html", handler: {}, ttl: 10 }, options)
     options.static = normalizeStaticMapping(options.static)
-    if (!options.static) 
+    if (!Array.isArray(options.static)) 
         throw new TypeError("invalid option in field 'static'")
-    if (!options.handler.error) options.handler.error = defaultErrorHandler
-    if (!options.handler.static) options.handler.static = defaultStaticHandler
+    if (!options.errorHandler) options.errorHandler = function(req, file, stat, options) {
+        return defaultErrorHandler(req, new HttpError("file not found", 10404, 404, `failed to stat file: ${file}`))
+    }
+    if (!options.fileHandler) options.fileHandler = defaultStaticHandler
     /**
      * 
      * @param {URL} url 
@@ -216,18 +231,17 @@ export function createStaticServer(options) {
             url.pathname = join(url.pathname, options.index)
 
             if (options.index.redir) 
-                return defaultRedirectHandler(url)
+                return handleRedirect(url)
             
             stat = await statFile(path)
         }
         if (!stat || !stat.isFile()) // 无法找到文件
-            // return options.handler.error(req, new HTTPError(404, 404, "file not found", {path}))
-            return false
+            return false // 未处理（交给下个服务处理器）
         
         if (!isfileModified(stat, req)) // 文件未修改
-            return defaultUnchangedHandler(stat, options)
+            return handleNotModified(stat, options)
         // 返回文件内容
-        return options.handler.static(stat, path, options)
+        return options.fileHandler(req, path, stat, options)
     };
     server.options = options;
     return server; 
@@ -241,7 +255,8 @@ const cacheSvelte = new Map;
  * @returns 
  */
 async function compileSvelte(path, stat, options) {
-    if (!stat || !stat.isFile()) throw new HTTPError(404, 404, "file not found", {path});
+    if (!stat || !stat.isFile())
+        throw new Error("file not found")
     const modify = cacheSvelte.get(path + "/modify");
 
     if (!modify || modify < stat.mtime.getTime()) {
@@ -275,8 +290,7 @@ export function createSvelteServer(options) {
         sveltePath: "svelte",
         dev: process.env.DEBUG ? true : false,
     })
-    if (!options.handler.static) options.handler.static = defaultFileHandler // 与默认的静态文件服务器不同
-    if (!options.handler.error) options.handler.error = defaultErrorHandler
+    if (!options.fileHandler) options.fileHandler = defaultFileHandler // 与默认的静态文件服务器不同
     options.static = normalizeStaticMapping(options.static)
     if (!!options.module) options.static.unshift({prefix: "/@module/", path: options.module})
     const server = createStaticServer(options)
