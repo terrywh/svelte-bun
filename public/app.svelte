@@ -5,19 +5,18 @@
 		let name;
 		
 		if(ua.match(/chrome|chromium|crios/i)){
-			name = "chrome";
+			name = "Chrome";
 		} else if(ua.match(/firefox|fxios/i)){
-			name = "firefox";
+			name = "Firefox";
 		} else if(ua.match(/safari/i)){
-			name = "safari";
+			name = "Safari";
 		} else if(ua.match(/opr\//i)){
-			name = "opera";
+			name = "Opera";
 		} else if(ua.match(/edg/i)){
-			name = "edge";
+			name = "Edge";
 		} else {
-			name = "other";
+			name = "<other>";
 		}
-		console.log(name)
 		return name;
 	}
 
@@ -29,5 +28,8 @@
 </style>
 
 <section>
-<h1 class="large">Hello from <b>{browser}</b> via <a href="https://bun.sh/">Bun!</a></h1>
+<h1 class="large">Hello <b>{browser}</b>! </h1>
+<cite>
+	(by <a href="https://svelte.dev/">Svelte</a> via <a href="https://bun.sh/">Bun!</a>)
+</cite>
 </section>
