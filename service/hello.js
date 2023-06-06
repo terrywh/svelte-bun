@@ -15,5 +15,25 @@ export default {
     },
     "/error": async function (method, query, body) {
         return new HttpError("failed to do something", 12345, 400, "failed to do something")
+    },
+    "/chunk": async function (method, query, body) {
+        const stream = new ReadableStream({
+            type: "direct",
+            async pull(controller) {
+                for (let i=0;i<100;++i) {
+                    controller.write(`event: data\ndata: ${i}\n\n`)
+                    controller.flush()
+                    await Bun.sleep(1000)
+                }
+                controller.end()
+            },
+        })
+        return new Response(stream, {
+            headers: {
+                "content-type": "text/event-stream",
+                // "content-type": "application/json",
+                "transfer-encoding": "chunked",
+            }
+        })
     }
 }
