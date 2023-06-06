@@ -52,9 +52,11 @@ export function createRestfulServer(handler, options) {
             } catch (ex) {
                 r = ex
             }
-            if (r instanceof Error) 
+            if (r instanceof Error) // 错误响应
                 return options.errorHandler(req, r)
-            else 
+            else if (r instanceof Response) // 自定义响应
+                return r
+            else // JSON 响应
                 return new Response(JSON.stringify(r), { headers: {
                         "content-type": "application/json",
                 }})
