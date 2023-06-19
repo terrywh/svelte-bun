@@ -53,39 +53,41 @@ export function parseArgs() {
     return options
 }
 
-const CaseFn = {
+const A = 'A'.charCodeAt(0)
+const Z = 'Z'.charCodeAt(0)
+const Split = {
     "HelloWorld": function (s) {
-        return `${s.substring(0, 1).toUpperCase()}${s.substring(1)}`
+        const r = []
+        let o = 0
+        for (let i=0;i<s.length;++i) {
+            const x = s.charCodeAt(i)
+            if (x >= A && x <= Z && i > 0) {
+                r.push(s.substring(o, i))
+                o = i
+            }
+        }
+        if (o < s.length -1) {
+            r.push(s.substring(o))
+        }
+        return r
     },
-    "hello-world": function(s) {
-        return s.toLowerCase()
+    "hello-world": function (s) {
+        return s.split('-')
     },
     "HELLO_WORLD": function(s) {
-        return s.toUpperCase()
-    },
-    "helloWorld": function (s, index) {
-        if (index == 0) return s.toLowerCase()
-        return `${s.substring(0, 1).toUpperCase()}${s.substring(1)}`
+        return s.split('_')
     }
-}
-
-const JoinSym = {
-    "HelloWorld": "",
-    "hello-world": "-",
-    "HELLO_WORLD": "_",
-    "helloWorld": "",
 }
 
 /**
  * 
  * @param {string | object} inopt 
- * @param {"HelloWorld" | "helloWorld" | "hello-world" | "HELLO_WORLD"} style 
+ * @param {"HelloWorld" | "hello-world" | "HELLO_WORLD"} style 
  * @returns 
  */
 export function normalize(inopt, style) {
     if (typeof inopt == "string") {
-        style = style ? style : "hello-world"
-        return inopt.split(/-|_|[A-Z]/).map(CaseFn[style]).join(JoinSym[style])
+        return Split[style](inopt).map((s) => s.toLowerCase()).join('-')
     }
 
     let osopt = {}
@@ -96,7 +98,7 @@ export function normalize(inopt, style) {
 }
 /**
  * @typedef ParseArgsOptions
- * @property {"HelloWorld" | "helloWorld" | "hello-world" | "HELLO_WORLD"} [style="helloWorld"];
+ * @property {"HelloWorld" | "hello-world" | "HELLO_WORLD"} [style="HelloWorld"];
  */
 
 /**
@@ -105,7 +107,7 @@ export function normalize(inopt, style) {
  * @returns 
  */
 export function parseOpts(options) {
-    options = Object.assign({style: "helloWorld"}, options)
+    options = Object.assign({style: "HelloWorld"}, options)
     return normalize(parseArgs(), options.style)
 }
 
@@ -130,7 +132,5 @@ export function __isEntry(meta) {
 }
 
 if (__isEntry(import.meta)) {
-    console.log("c = parse(c) =", parse("c"))
-    console.log(parseArgs())
-    console.log(parseOpts({"style":"HELLO_WORLD"}))
+    console.log(parseOpts({"style":"HelloWorld"}))
 }

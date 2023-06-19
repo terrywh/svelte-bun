@@ -126,7 +126,7 @@ export async function defaultSvelteHandler(req, file, stat, options) {
         compiled = await compileSvelte(file, stat, options);
     } catch (ex) {
         return options.errorHandler(req, new HttpError(
-            "failed to compile svelte", 10500, 500, `failed to compile svelte '${path}': ${ex}`))
+            "failed to compile svelte", 10500, 500, `failed to compile svelte '${file}': ${ex}`))
     }
 
     return new Response(compiled.js.code, {headers: {

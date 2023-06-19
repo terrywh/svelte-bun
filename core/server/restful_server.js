@@ -48,7 +48,7 @@ export function createRestfulServer(handler, options) {
                 else if (ctype.match("form-data") || ctype.match("x-www-form-urlencoded"))
                     r = await cb(req.method, url.searchParams, await req.formData())
                 else 
-                    r = await cb(req.method, url.searchParams, null)
+                    r = await cb(req.method, url.searchParams, await req.text())
             } catch (ex) {
                 r = ex
             }
