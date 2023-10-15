@@ -1,4 +1,12 @@
 # sveltejs for bun
+    
+    $ curl -fsSL https://bun.sh/install | bash
+    $ source ~/.bashrc
+    $ git clone --depth 1 https://github.com/terrywh/svelte-bun.git
+    $ cd svelte-bun
+    $ bun install
+    $ bun run start
+
 Just in time Component (Using only svelte on bun), compile svelte component on the fly; 
 > for Development environment only.
 
