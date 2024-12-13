@@ -16,8 +16,13 @@ export function rewriteImports(code, path, rewriteHandler) {
     return r
 }
 
-export function defaultRewriteHandler(n) {
-    if (n.startsWith("/") || n.startsWith("./") || n.startsWith("../")) // 相对或绝对路径保持不变
-        return n
-    return `/@module/${n}/index.mjs` // 访问非 JS 文件 | 内部包，补充完整路径
+export function defaultRewriteHandler(name) {
+    if (name.startsWith("/") || name.startsWith("./") || name.startsWith("../")) // 相对或绝对路径保持不变
+        return name
+    // if (name == "svelte")
+    //     return "/@module/svelte"
+    // if (name.startsWith("svelte/"))
+    //     return `/${name}.js`
+    return `https://esm.sh/${name}`
+    return `/@import/${name}.module`
 }

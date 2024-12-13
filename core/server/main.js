@@ -1,13 +1,4 @@
 /**
- * @callback ServerMux
- * @param {URL} url
- * @param {Request} req
- * @returns {Promise<Response>|Promise<any>}
- */
-
-import { defaultFileHandler } from "./static_server.js"
-
-/**
  * @param {ServerMux[]} mux
  * @param {Request} req 
  */
@@ -18,6 +9,9 @@ function doServe(mux) {
             let r = await serve(url, req)
             if (r instanceof Response) return r
         }
+        return new Response(null, {
+            status: 404,
+        })
     }
 }
 
