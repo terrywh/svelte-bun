@@ -11,10 +11,8 @@ serve([
         (await import("../service/hello.js")).default,
     )),
     createSvelteServer({
-        root: `${root}/public`,
-        svelte: {
-            dev: process.env.DEBUG ? true : false,
-        },
+        root: root,
+        public: `${root}/public`,
     }),
     createStaticServer({
         root: `${root}/public`,
