@@ -18,9 +18,7 @@ Add a component using `.svelte` as file extension, and import it.
 Install a module using `bun install` and import it from `/module/xxx.js` (auto rewrite support in '*.svelte.js','*.svelte' files).
 > see `sbin/server.js`, `public/index.js`, `public/index.svelte`;
 
-# restful
-Add a service using `.js` and export the handler, import it as the handler parameter of `createRestfulServer()`.
-> see `service/hello.js` and `sbin/server.js`
-
-
+## restful/api
+Add a service using `.js` and export the handler, import it as the handler parameter of `createRestfulServer()`, call api using `fetch()`:
+> see `service/hello.js`, `sbin/server.js`, `public/index.svelte`
 
