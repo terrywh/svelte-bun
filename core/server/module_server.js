@@ -1,4 +1,4 @@
-import { compile } from "svelte/compiler";
+import { compile, compileModule } from "svelte/compiler";
 import { DEV } from "esm-env";
 import { init, parse } from 'es-module-lexer';
 import { join } from "node:path";
@@ -33,7 +33,9 @@ export async function createModuleServer(options) {
     // 导出模块
     const lastModified = new Date();
     const e = new exporter(options);
-    for (const module of options.modules || ["svelte"]) {
+    if (!Array.isArray(options.modules)) options.modules = [];
+    if (!options.modules.includes("svelte")) options.modules.push("svelte");
+    for (const module of options.modules) {
         await e.collect(module);
     }
     const r = await e.build();
@@ -44,7 +46,7 @@ export async function createModuleServer(options) {
     await e.cleanup();
 
     const server = async function (url, req) {
-        if (url.pathname.endsWith(".svelte.js") || url.pathname.endsWith(".svelte")) {
+        if (url.pathname.endsWith(".svelte") || url.pathname.endsWith(".svelte.js") || url.pathname.endsWith(".svelte.ts")) {
             const file = Bun.file(join(options.public, url.pathname));
             if (!isModified(new Date(file.lastModified), req))
                 return handleNotModified(lastModified, options);
@@ -53,9 +55,13 @@ export async function createModuleServer(options) {
                 filename: url.pathname,
                 dev: DEV,
             });
-            const result = compile(await Bun.file(join(options.public, url.pathname)).text(), compileOptions);
+            let result;
+            if (url.pathname.endsWith(".svelte")) {
+                result = compile(await file.text(), compileOptions);
+            } else {
+                result = compileModule(await file.text(), compileOptions);
+            }
             const code = rewrite(result.js.code);
-
             return new Response(code, {
                 headers: {
                     "content-type": "application/javascript",

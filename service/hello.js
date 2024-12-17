@@ -1,3 +1,4 @@
+import { VERSION } from "svelte/compiler";
 import { HttpError } from "../core/server/error";
 
 export default {
@@ -15,6 +16,9 @@ export default {
     },
     "/error": async function (method, query, body) {
         return new HttpError("failed to do something", 12345, 400, "failed to do something")
+    },
+    "/version": async function (method, query, body) {
+        return {"svelte": "v" + VERSION}
     },
     "/chunk": async function (method, query, body) {
         const stream = new ReadableStream({

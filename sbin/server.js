@@ -13,6 +13,7 @@ serve([
     await createModuleServer({
         root: root,
         public: `${root}/public`,
+        modules: ["svelte", "esm-env"],
     }),
     await createStaticServer({
         public: `${root}/public`,
