@@ -2,14 +2,15 @@
   "name": "svelte-app",
   "version": "1.0.0",
   "scripts": {
-    "dev": "DEBUG=1 bun sbin/server.js",
-    "start": "bun sbin/server.js"
+    "dev": "NODE_ENV=dev bun sbin/server.js",
+    "start": "NODE_ENV=prod bun sbin/server.js"
   },
   "devDependencies": {
-    "bun-types": "^0.6.9"
+    "bun-types": "^0.6.14"
   },
   "dependencies": {
     "es-module-lexer": "^1.5.4",
-    "svelte": "^5.12.0"
+    "esm-env": "^1.2.1",
+    "svelte": "^5.14.1"
   }
 }

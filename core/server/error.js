@@ -3,15 +3,15 @@
  * @param {Request} req 
  * @return {Promise<Response>}
  */
-export async function defaultErrorHandler(req, err) {
+export async function defaultErrorHandler(url, req, err) {
     if (err instanceof HttpError) {
-        console.warn(new Date(), `${req.method} ${req.url} - failed, respond with status=${err.status} code=${err.code} cause='${err.cause}'\n`, err)
+        console.warn(new Date(), `${req.method} ${url} failed, respond with status=${err.status} code=${err.code} cause=${err.cause}\n`, err)
         return new Response(JSON.stringify(err), {
             status: err.status,
             headers: { "content-type": "application/json" }
         })
     } else {
-        console.error(new Date(), `${req.method} ${req.url} - failed, respond with status=500\n`, err)
+        console.error(new Date(), `${req.method} ${url} failed, respond with status=500\n`, err)
         return new Response(JSON.stringify({
             "error": {"code": 10500, "desc": "unknown error"},
         }), {
@@ -38,7 +38,6 @@ export class HttpError extends Error {
      */
     constructor(desc, code, status, cause) {
         super(desc, {cause: cause})
-        this.name = "HttpError"
         this.code = code
         this.status = status || 200
     }

@@ -1,7 +1,6 @@
 import { stat as asyncStat } from "fs/promises";
 import { extname, join } from "path";
 import { resolve } from "path";
-import { defaultErrorHandler, HttpError } from "./error";
 import { Stats } from "fs";
 
 /**
@@ -27,17 +26,6 @@ function parseContentType(file) {
     return ctypes[extname(file)] || ctypes[".bin"];
 }
 
-function parseFilePath(url, options) {
-    if (typeof options.root === "object") {
-        let target
-        for (let mapping of options.root) {
-            if (url.pathname.startsWith(mapping.prefix)) 
-                return resolve(mapping.path, url.pathname.substring(mapping.prefix.length))
-        }
-    }
-    return resolve(options.root, url.pathname.substring(1))
-}
-
 /**
  * 
  * @param {URL} url 
@@ -59,11 +47,12 @@ async function statFile(path) {
  * @param {Request} req 
  * @returns 
  */
-function isfileModified(stat, req) {
-    const since = parseModifiedSince(req);
-    if (!!since && parseInt(since.getTime()/1000) >= parseInt(stat.mtime.getTime()/1000))
-        return false
-    return true
+export function isModified(mtime, req) {
+    const since = req.headers.get("if-modified-since");
+    if (!since) return true;
+    const cache = new Date(since);
+    if (!cache) return true;
+    return Math.trunc(cache.getTime()/1000) < Math.trunc(mtime.getTime()/1000); // 对齐时间精度
 }
 
 /**
@@ -88,26 +77,22 @@ function handleRedirect(url, options) {
  * @param {Stats} stat 
  * @returns 
  */
-function handleNotModified(stat, options) {
+export function handleNotModified(mtime, options) {
     return new Response(null, {
         status: 304,
         headers: {
             "cache-control": `max-age=${options.ttl || 10}, must-revalidate`,
-            "last-modified": stat.mtime.toUTCString(),
+            "last-modified": mtime.toUTCString(),
         },
     });
 }
 
-function handleNotFound(url) {
-    return new Response(`file '${url.pathname}' not found`, { status: 404 });
-}
-
-function handleStaticFile(path, stat, options) {
+function handleStaticFile(mtime, path, options) {
     return new Response(Bun.file(path), {
         headers: {
             "Content-Type": parseContentType(path),
             "Cache-Control": `max-age=${options.ttl}, must-revalidate`,
-            "Last-Modified": stat.mtime.toUTCString(),
+            "Last-Modified": mtime.toUTCString(),
         },
     });
 }
@@ -123,19 +108,14 @@ function handleStaticFile(path, stat, options) {
  * ]
  * 
  * @typedef {Object} StaticServerOption 静态文件服务器选项
- * @property {string | Record<string, string> | StaticServerDirMap[]} root 静态文件查找路径，访问路径与文件路径映射目录;
+ * @property {string } public 静态文件查找路径，访问路径与文件路径映射目录;
  * 1. 多个路径映射其匹配顺序与定义顺序一致
  * 2. XXXX
  * @property {number} [ttl=10] 缓存时间, 默认 10 单位：秒
  * @property {string} [index="index.html"] 索引文件，默认 "index.html" 文件
  * 
  * @example 仅指定根路径
- * { static: "/data/htdocs/xxx" }
- * @example 指定多个映射
- * { static: {
- *      "/": "/data/htdocs/xxx/public",
- *      "/abc": "/data/htdocs/abc"
- * } }
+ * { public: "/data/htdocs/xxx" }
  */
 
 /**
@@ -151,7 +131,7 @@ export function createStaticServer(options) {
      * @param {Request} req 
      */
     const server = async function (url, req) {
-        let path = parseFilePath(url, options)
+        let path = resolve(options.public, url.pathname.substring(1))
         let stat = await statFile(path)
         if (!!stat && stat.isDirectory()) {
             path = join(path, options.index)
@@ -164,9 +144,9 @@ export function createStaticServer(options) {
         }
         if (!stat || !stat.isFile()) // 无法找到文件
             return false // 未处理（交给下个服务处理器）
-        if (!isfileModified(stat, req)) // 文件未修改
-            return handleNotModified(stat, options)
-        return handleStaticFile(path, stat, options);
+        if (!isModified(stat.mtime, req)) // 文件未修改
+            return handleNotModified(stat.mtime, options)
+        return handleStaticFile(stat.mtime, path, options);
     };
     server.options = options;
     return server; 
