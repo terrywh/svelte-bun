@@ -14,7 +14,7 @@ export function rewrite(code) {
     for (let i of imports) {
         result += code.substring(offset, i.s);
         offset = i.e;
-        if (i.n[0] == '.' || i.n[0] == '/') {
+        if (i.n[0] == '.' || i.n[0] == '/' || i.n.startsWith("http://") || i.n.startsWith("https://")) {
             result += i.n;
         } else {
             result += `/module/${i.n}.js`
