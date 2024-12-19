@@ -74,6 +74,7 @@ export class exporter {
             options.minify = false;
             options.sourcemap = "inline";
         } else {
+            options.conditions.push("production");
             options.minify = true;
         }
         const result = await Bun.build(options);

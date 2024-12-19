@@ -6,6 +6,7 @@ import { HttpError, defaultErrorHandler } from "./error.js"
 
 /**
  * @callback RestfulServerHandler
+ * @param {URL} url
  * @param {Request} req
  * @param {any} r
  * @returns {Response | Promise<Response>}
@@ -53,7 +54,7 @@ export function createRestfulServer(handler, options) {
                 r = ex
             }
             if (r instanceof Error) // 错误响应
-                return options.errorHandler(req, r)
+                return options.errorHandler(url, req, r)
             else if (r instanceof Response) // 自定义响应
                 return r
             else // JSON 响应
