@@ -1,5 +1,5 @@
 # svelte-bun
-   compile svelte/v5 component on the fly without bundling.
+   compile svelte/v5 component on the fly (use only (oven-sh/bun)[https://github.com/oven-sh/bun]).
 
     $ curl -fsSL https://bun.sh/install | bash
     $ source ~/.bashrc
