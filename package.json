@@ -11,6 +11,6 @@
   "dependencies": {
     "es-module-lexer": "^1.5.4",
     "esm-env": "^1.2.1",
-    "svelte": "^5.14.1"
+    "svelte": "^5.16.0"
   }
 }
