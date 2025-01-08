@@ -9,8 +9,8 @@
     "bun-types": "^0.6.14"
   },
   "dependencies": {
-    "es-module-lexer": "^1.5.4",
+    "es-module-lexer": "^1.6.0",
     "esm-env": "^1.2.1",
-    "svelte": "^5.16.0"
+    "svelte": "^5.16.6"
   }
 }
