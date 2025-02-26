@@ -2,8 +2,11 @@
 	import { DEV } from "esm-env";
 	const browser = detectBrowser(navigator.userAgent)
 
-	let count  = $state(loadCount());
-	let version = $state("");
+	let count = $state(loadCount());
+	let version = $state({
+		svelte: "",
+		bun: "",
+	});
 	$effect(() => {
 		sessionStorage.setItem("count", count)
 	})
@@ -34,7 +37,7 @@
 		const rsp = await fetch("/version");
 		return await rsp.json();
 	}
-	loadVersion().then(v => { version = v.svelte});
+	loadVersion().then(v => { Object.assign(version, v); });
 
 
 </script>
@@ -49,6 +52,6 @@
 	SessionStorage: <input type="number" bind:value={count} />
 </div>
 <cite>
-	(by <a href="https://svelte.dev/">Svelte/{version}</a> via <a href="https://bun.sh/">Bun!</a> on a <strong>{DEV ? "development" : "production"}</strong> server)
+	(by <a href="https://svelte.dev/">Svelte/{version.svelte}</a> via <a href="https://bun.sh/">Bun/{version.bun}!</a> on a <strong>{DEV ? "development" : "production"}</strong> server)
 </cite>
 </section>

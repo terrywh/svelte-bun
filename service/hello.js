@@ -18,7 +18,7 @@ export default {
         return new HttpError("failed to do something", 12345, 400, "failed to do something")
     },
     "/version": async function (method, query, body) {
-        return {"svelte": "v" + VERSION}
+        return {"svelte": "v" + VERSION, "bun": "v" + Bun.version}
     },
     "/chunk": async function (method, query, body) {
         const stream = new ReadableStream({

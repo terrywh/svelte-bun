@@ -22,3 +22,4 @@ Install a module using `bun install` and import it from `/module/xxx.js` (auto r
 Add a service using `.js` and export the handler, import it as the handler parameter of `createRestfulServer()`, call api using `fetch()`:
 > see `service/hello.js`, `sbin/server.js`, `public/index.svelte`
 
+
