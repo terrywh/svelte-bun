@@ -1,16 +1,6 @@
 {
-  "name": "svelte-app",
-  "version": "1.0.0",
-  "scripts": {
-    "dev": "NODE_ENV=dev bun sbin/server.js",
-    "start": "NODE_ENV=prod bun sbin/server.js"
-  },
+  "dependencies": {},
   "devDependencies": {
-    "@types/bun": "^1.2.3"
-  },
-  "dependencies": {
-    "es-module-lexer": "^1.6.0",
-    "esm-env": "^1.2.2",
-    "svelte": "^5.20.4"
+    "bun-plugin-svelte": "^0.0.5"
   }
 }
