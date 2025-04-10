@@ -1,6 +1,9 @@
 {
   "dependencies": {},
   "devDependencies": {
-    "bun-plugin-svelte": "^0.0.5"
+    "bootstrap": "^5.3.5",
+    "bun-plugin-svelte": "^0.0.5",
+    "dayjs": "^1.11.13",
+    "highlight.js": "^11.11.1"
   }
 }

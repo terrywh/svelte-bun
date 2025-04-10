@@ -1,4 +1,4 @@
-import * as bootstrap from 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/+esm';
+import * as bootstrap from 'bootstrap';
 
 const DEFAULTS = {
   threshold: 2,
